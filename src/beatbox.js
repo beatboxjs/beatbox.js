@@ -16,38 +16,38 @@ Beatbox._cacheLength = 1200;
 Beatbox._webAudio = Howler.usingWebAudio;
 Beatbox._instruments = { };
 
-Beatbox.registerInstrument = function(key, instrument) {
-	Beatbox._instruments[key] = instrument;
+Beatbox.registerInstrument = function(key, soundObj, sprite) {
+	Beatbox._instruments[key] = { soundObj: soundObj, sprite: sprite };
 };
 
-Beatbox._playWhen = function(instrument, when, callback) {
+Beatbox._playWhen = function(instrumentWithParams, when, callback) {
 	Beatbox._whenOverride = when;
 	try {
-		Beatbox._play(instrument, callback);
+		Beatbox._play(instrumentWithParams, callback);
 
 		// Clear end timer, as its time will be wrong and we don't really need it, but it fucks up the stop() function
-		var timer = instrument.instrument._onendTimer.pop();
+		var timer = instrumentWithParams.instrumentObj.soundObj._onendTimer.pop();
 		timer && clearTimeout(timer.timer);
 	} finally {
 		Beatbox._whenOverride = null;
 	}
 };
 
-Beatbox._play = function(instrument, callback) {
-	instrument.instrument._volume = instrument.volume;
-	instrument.instrument.play(callback);
+Beatbox._play = function(instrumentWithParams, callback) {
+	instrumentWithParams.instrumentObj.soundObj._volume = instrumentWithParams.volume;
+	instrumentWithParams.instrumentObj.soundObj.play(instrumentWithParams.instrumentObj.sprite, callback);
 };
 
-Beatbox._getInstrument = function(instr) {
+Beatbox._getInstrumentWithParams = function(instr) {
 	if(instr == null)
 		return null;
 
 	var ret = {
-		instrument : Beatbox._instruments[typeof instr == "string" ? instr : instr.instrument],
+		instrumentObj : Beatbox._instruments[typeof instr == "string" ? instr : instr.instrument],
 		volume : instr.volume != null ? instr.volume : 1
 	};
 
-	return ret.instrument ? ret : null;
+	return ret.instrumentObj ? ret : null;
 };
 
 Beatbox.prototype.play = function() {
@@ -151,7 +151,7 @@ Beatbox.prototype._playUsingTimeout = function() {
 	this.onbeat && this.onbeat(this._position);
 	if(this._pattern[this._position]) {
 		for(var i=0; i<this._pattern[this._position].length; i++) {
-			var instr = Beatbox._getInstrument(this._pattern[this._position][i]);
+			var instr = Beatbox._getInstrumentWithParams(this._pattern[this._position][i]);
 			if(instr)
 				Beatbox._play(instr);
 		}
@@ -218,14 +218,14 @@ Beatbox.prototype._fillWebAudioCache = function() {
 
 		if(this._pattern[this._position]) {
 			for(var strokeIdx=0; strokeIdx<this._pattern[this._position].length; strokeIdx++) { (function(){
-				var instr = Beatbox._getInstrument(self._pattern[self._position][strokeIdx]);
+				var instr = Beatbox._getInstrumentWithParams(self._pattern[self._position][strokeIdx]);
 				if(instr) {
 					var time = self._referenceTime + self._position*self._strokeLength/1000;
 
 					var sound = Beatbox._playWhen(instr, time, function(id) {
 						self._players.push({
 							time: time,
-							instr: instr,
+							instr: instr.instrumentObj.soundObj,
 							id: id
 						});
 					});
@@ -238,7 +238,7 @@ Beatbox.prototype._fillWebAudioCache = function() {
 Beatbox.prototype._clearWebAudioCache = function(from) {
 	for(var i=0; i<this._players.length; i++) {
 		if(from == null || this._players[i].time >= from) {
-			this._players[i].instr.instrument.stop(this._players[i].id);
+			this._players[i].instr.stop(this._players[i].id);
 			this._players.splice(i, 1);
 			i--;
 		}
