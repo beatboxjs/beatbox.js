@@ -28,7 +28,7 @@ var pattern = [
     [ "snare", "tom" ],
     [ "snare" ],
     [ "snare" ],
-    [ "snare" ],
+    [ { instrument: "snare", volume: 0.8 } ], // Extended syntax
     [ "snare", "tom" ],
     [ "snare" ],
     [ "snare", "tom" ],

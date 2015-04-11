@@ -9,23 +9,25 @@
             Beatbox.registerInstrument("sn", new Howl({ urls: [ "sn.mp3" ] }));
             Beatbox.registerInstrument("su", new Howl({ urls: [ "su.mp3" ] }));
 
+            var sn_quiet = { instrument: "sn", volume: 0.3 };
+
             var pattern = [
                 [ "sn", "su" ],
+                [ sn_quiet ],
+                [ sn_quiet ],
+                [ sn_quiet, "su" ],
                 [ "sn" ],
+                [ sn_quiet ],
+                [ sn_quiet, "su" ],
+                [ sn_quiet ],
                 [ "sn" ],
+                [ sn_quiet ],
+                [ sn_quiet, "su" ],
+                [ sn_quiet ],
                 [ "sn", "su" ],
-                [ "sn" ],
-                [ "sn" ],
-                [ "sn", "su" ],
-                [ "sn" ],
-                [ "sn" ],
-                [ "sn" ],
-                [ "sn", "su" ],
-                [ "sn" ],
-                [ "sn", "su" ],
-                [ "sn" ],
-                [ "sn" ],
-                [ "sn" ]
+                [ sn_quiet ],
+                [ sn_quiet ],
+                [ sn_quiet ]
             ];
 
             var bpm = 100;
