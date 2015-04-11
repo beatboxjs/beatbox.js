@@ -27,7 +27,8 @@ Beatbox._playWhen = function(instrument, when, callback) {
 		instrument.play(callback);
 
 		// Clear end timer, as its time will be wrong and we don't really need it, but it fucks up the stop() function
-		clearTimeout(instrument._onendTimer.pop().timer);
+		var timer = instrument.instrument._onendTimer.pop();
+		timer && clearTimeout(timer.timer);
 	} finally {
 		Beatbox._whenOverride = null;
 	}
