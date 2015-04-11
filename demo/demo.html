@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+        <script src="../bower_components/howler/howler.js"></script>
+        <script src="../src/beatbox.js"></script>
+		<script>
+            //Beatbox._webAudio = false;
+            Beatbox.registerInstrument("sn", new Howl({ urls: [ "sn.mp3" ] }));
+            Beatbox.registerInstrument("su", new Howl({ urls: [ "su.mp3" ] }));
+
+            var pattern = [
+                [ "sn", "su" ],
+                [ "sn" ],
+                [ "sn" ],
+                [ "sn", "su" ],
+                [ "sn" ],
+                [ "sn" ],
+                [ "sn", "su" ],
+                [ "sn" ],
+                [ "sn" ],
+                [ "sn" ],
+                [ "sn", "su" ],
+                [ "sn" ],
+                [ "sn", "su" ],
+                [ "sn" ],
+                [ "sn" ],
+                [ "sn" ]
+            ];
+
+            var bpm = 100;
+
+            var repeat = true;
+
+			var player = new Beatbox(pattern, 60000/bpm/4, repeat);
+
+            player.onbeat = function(beat) {
+                document.getElementById("pos").innerHTML = ""+beat;
+            };
+
+            player.onstop = function() {
+                document.getElementById("pos").innerHTML = "stop";
+            };
+		</script>
+	</head>
+	<body>
+		<button onclick="player.play()">Play</button>
+        <button onclick="player.stop()">Stop</button>
+        <button onclick="player.setPosition(0)">Reset</button>
+        Position: <span id="pos"></span>
+        <br>
+        <button onclick="bpm += 10; player.setBeatLength(60000/bpm/4)">+10</button>
+        <button onclick="bpm -= 10; player.setBeatLength(60000/bpm/4)">-10</button>
+        <button onclick="repeat = !repeat; player.setRepeat(repeat)">Toggle repeat</button>
+        <button onclick="pattern = pattern.reverse(); player.setPattern(pattern)">Reverse pattern</button>
+	</body>
+</html>
