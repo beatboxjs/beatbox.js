@@ -148,7 +148,9 @@ Beatbox.prototype._applyChanges = function() {
 };
 
 Beatbox.prototype._playUsingTimeout = function() {
-	this.onbeat && this.onbeat(this._position);
+	var self = this;
+
+	this.onbeat && setTimeout(function() { self.onbeat(self._position); }, 0);
 	if(this._pattern[this._position]) {
 		for(var i=0; i<this._pattern[this._position].length; i++) {
 			var instr = Beatbox._getInstrumentWithParams(this._pattern[this._position][i]);
@@ -157,12 +159,12 @@ Beatbox.prototype._playUsingTimeout = function() {
 		}
 	}
 
-	var self = this;
 	this._timeout = setTimeout(function() {
 		if(++self._position >= self._pattern.length) {
 			self._position = 0;
 			if(!self._repeat) {
-				self.onstop && self.onstop();
+				self.playing = false;
+				self.onstop && setTimeout(self.onstop, 0);
 				return;
 			}
 		}
