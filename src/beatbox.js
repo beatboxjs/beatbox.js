@@ -12,7 +12,8 @@ Beatbox = function(pattern, strokeLength, repeat) {
 	this._referenceTime = null;
 };
 
-Beatbox._cacheLength = 1200;
+Beatbox._cacheInterval = 1000;
+Beatbox._cacheLength = 2500;
 Beatbox._webAudio = Howler.usingWebAudio;
 Beatbox._instruments = { };
 
@@ -20,16 +21,20 @@ Beatbox.registerInstrument = function(key, soundObj, sprite) {
 	Beatbox._instruments[key] = { soundObj: soundObj, sprite: sprite };
 };
 
+Beatbox._setTimeout = setTimeout;
 Beatbox._playWhen = function(instrumentWithParams, when, callback) {
 	Beatbox._whenOverride = when;
+
+	// Fix time for end timer
+	setTimeout = function(func, millis) {
+		return Beatbox._setTimeout.call(null, func, millis + (when - Howler.ctx.currentTime)*1000);
+	};
+
 	try {
 		Beatbox._play(instrumentWithParams, callback);
-
-		// Clear end timer, as its time will be wrong and we don't really need it, but it fucks up the stop() function
-		var timer = instrumentWithParams.instrumentObj.soundObj._onendTimer.pop();
-		timer && clearTimeout(timer.timer);
 	} finally {
 		Beatbox._whenOverride = null;
+		setTimeout = Beatbox._setTimeout;
 	}
 };
 
@@ -143,6 +148,7 @@ Beatbox.prototype._applyChanges = function() {
 		while(this._referenceTime > Howler.ctx.currentTime) // Caching might be in a future repetition already
 			this._referenceTime -= this._pattern.length * this._strokeLength / 1000;
 
+		this._clearWebAudioCache(Howler.ctx.currentTime+0.000001);
 		this._fillWebAudioCache();
 	}
 };
@@ -185,7 +191,7 @@ Beatbox.prototype._playUsingWebAudio = function() {
 				self.onstop && self.onstop();
 			}, self._referenceTime*1000 + self._strokeLength * self._pattern.length - Howler.ctx.currentTime*1000);
 		} else {
-			self._timeout = setTimeout(func, Beatbox._cacheLength*.8);
+			self._timeout = setTimeout(func, Beatbox._cacheInterval);
 		}
 	};
 	func();
@@ -204,11 +210,10 @@ Beatbox.prototype._playUsingWebAudio = function() {
 };
 
 Beatbox.prototype._fillWebAudioCache = function() {
-	this._clearWebAudioCache(this._referenceTime + this._position*this._strokeLength/1000);
-
 	var self = this;
-	var strokes = Math.ceil(Beatbox._cacheLength/this._strokeLength);
-	for(var i=0; i < strokes; i++,this._position++) {
+
+	var cacheUntil = Howler.ctx.currentTime + Beatbox._cacheLength/1000;
+	while(this._referenceTime + this._position*this._strokeLength/1000 <= cacheUntil) {
 		if(this._position >= this._pattern.length) {
 			if(this._repeat) {
 				this._position = 0;
@@ -234,6 +239,8 @@ Beatbox.prototype._fillWebAudioCache = function() {
 				}
 			})(); }
 		}
+
+		this._position++
 	}
 };
 
