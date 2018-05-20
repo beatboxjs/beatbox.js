@@ -2,12 +2,11 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-        <script src="../bower_components/howler/howler.js"></script>
-        <script src="../src/beatbox.js"></script>
+        <script src="beatbox.js"></script>
 		<script>
             //Beatbox._webAudio = false;
-            Beatbox.registerInstrument("sn", new Howl({ urls: [ "sn.mp3" ] }));
-            Beatbox.registerInstrument("su", new Howl({ urls: [ "su.mp3" ] }));
+            Beatbox.registerInstrument("sn", new howler.Howl({ src: [ "sn.mp3" ] }));
+            Beatbox.registerInstrument("su", new howler.Howl({ src: [ "su.mp3" ] }));
 
             var sn_quiet = { instrument: "sn", volume: 0.3 };
 
