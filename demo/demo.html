@@ -5,8 +5,8 @@
         <script src="beatbox.js"></script>
 		<script>
             //Beatbox._webAudio = false;
-            Beatbox.registerInstrument("sn", new howler.Howl({ src: [ "sn.mp3" ] }));
-            Beatbox.registerInstrument("su", new howler.Howl({ src: [ "su.mp3" ] }));
+            Beatbox.registerInstrument("sn", { src: [ "sn.mp3" ] });
+            Beatbox.registerInstrument("su", { src: [ "su.mp3" ] });
 
             var sn_quiet = { instrument: "sn", volume: 0.3 };
 

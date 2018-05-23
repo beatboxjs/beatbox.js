@@ -7,7 +7,12 @@ module.exports = {
 	module: {
 		rules: [
 			{ test: require.resolve("howler"), loader: "expose-loader?howler" },
-			{ test: /\.js$/, loader: "babel-loader?presets=env" },
+			{
+				resource: { and: [ /\.js/, [
+					__dirname + "/src/"
+				] ] },
+				loader: "babel-loader?presets=env"
+			}
 		]
 	},
 	mode: "production",
