@@ -1,4 +1,5 @@
-import { Howler } from 'howler';
+const Howl = require('howler').Howl;
+const Howler = require('howler').Howler;
 
 class Beatbox {
 	constructor(pattern, strokeLength, repeat) {
@@ -15,8 +16,8 @@ class Beatbox {
 		this._referenceTime = null;
 	}
 
-	static registerInstrument(key, soundObj, sprite) {
-		Beatbox._instruments[key] = { soundObj: soundObj, sprite: sprite };
+	static registerInstrument(key, soundOptions, sprite) {
+		Beatbox._instruments[key] = { soundObj: new Howl(soundOptions), sprite: sprite };
 	}
 
 	static _playWhen(instrumentWithParams, when) {
@@ -56,15 +57,17 @@ class Beatbox {
 		if(this.playing)
 			return;
 
-		this.playing = true;
+		this._ensureContext().then(() => {
+			this.playing = true;
 
-		if(Beatbox._webAudio) {
-			this._playUsingWebAudio();
-		} else {
-			this._playUsingTimeout();
-		}
+			if(Beatbox._webAudio) {
+				this._playUsingWebAudio();
+			} else {
+				this._playUsingTimeout();
+			}
 
-		this.onplay && this.onplay();
+			this.onplay && this.onplay();
+		});
 	}
 
 	stop() {
@@ -117,7 +120,7 @@ class Beatbox {
 	}
 
 	setBeatLength(strokeLength) {
-		if(Beatbox._webAudio) {
+		if(Beatbox._webAudio && this.playing) {
 			// Clear everything after the currently playing stroke. If the beat length has been increased, the clear call
 			// in _fillWebAudioCache() would miss the old next stroke, which comes before the new next stroke.
 			this._clearWebAudioCache(Howler.ctx.currentTime+0.000001);
@@ -174,10 +177,20 @@ class Beatbox {
 		}, this._strokeLength);
 	}
 
-	_playUsingWebAudio() {
-		new Promise((resolve) => {
+	_ensureContext() {
+		if(!Beatbox._webAudio)
+			return Promise.resolve();
+
+		return new Promise((resolve) => {
 			// If the context is suspended, resume it first. Otherwise play() will be called asynchronously and our
 			// whenOverride will not work.
+
+			if(!Howler.ctx) {
+				new Howl({
+					src: [ "#" ],
+					preload: false
+				});
+			}
 
 			if(Howler.state !== "running") {
 				Howler._autoResume();
@@ -186,33 +199,50 @@ class Beatbox {
 				resolve();
 			}
 		}).then(() => {
-			this._referenceTime = Howler.ctx.currentTime - this._position * this._strokeLength / 1000;
-
-			let func = () => {
-				if(this._fillWebAudioCache() === false) {
-					this._timeout = setTimeout(() => {
-						this.stop();
-						this._position = 0;
-						this.onstop && this.onstop();
-					}, this._referenceTime*1000 + this._strokeLength * this._pattern.length - Howler.ctx.currentTime*1000);
-				} else {
-					this._timeout = setTimeout(func, Beatbox._cacheInterval);
-				}
-			};
-			func();
-
-			if(this.onbeat) {
-				let onBeatFunc = () => {
-					this.onbeat(this.getPosition());
-					let sinceBeat = (Howler.ctx.currentTime - this._referenceTime)*1000 % this._strokeLength;
-					if(sinceBeat < 0)
-						sinceBeat += this._strokeLength;
-
-					this._timeout2 = setTimeout(onBeatFunc, this._strokeLength - sinceBeat);
+			// Hack Howler to support the "when" parameter of AudioBufferSourceNode.start()
+			if(!Howler.ctx.createBufferSourceBkp) {
+				Howler.ctx.createBufferSourceBkp = Howler.ctx.createBufferSource;
+				Howler.ctx.createBufferSource = function() {
+					let ret = Howler.ctx.createBufferSourceBkp(...arguments);
+					let startBkp = ret.start;
+					ret.start = function() {
+						if(Beatbox._whenOverride != null)
+							arguments[0] = Beatbox._whenOverride;
+						return (startBkp || ret.noteGrainOn).apply(this, arguments);
+					};
+					return ret;
 				};
-				onBeatFunc();
 			}
 		});
+	}
+
+	_playUsingWebAudio() {
+		this._referenceTime = Howler.ctx.currentTime - this._position * this._strokeLength / 1000;
+
+		let func = () => {
+			if(this._fillWebAudioCache() === false) {
+				this._timeout = setTimeout(() => {
+					this.stop();
+					this._position = 0;
+					this.onstop && this.onstop();
+				}, this._referenceTime*1000 + this._strokeLength * this._pattern.length - Howler.ctx.currentTime*1000);
+			} else {
+				this._timeout = setTimeout(func, Beatbox._cacheInterval);
+			}
+		};
+		func();
+
+		if(this.onbeat) {
+			let onBeatFunc = () => {
+				this.onbeat(this.getPosition());
+				let sinceBeat = (Howler.ctx.currentTime - this._referenceTime)*1000 % this._strokeLength;
+				if(sinceBeat < 0)
+					sinceBeat += this._strokeLength;
+
+				this._timeout2 = setTimeout(onBeatFunc, Math.max(Beatbox._minOnBeatInterval, this._strokeLength - sinceBeat));
+			};
+			onBeatFunc();
+		}
 	}
 
 	_fillWebAudioCache() {
@@ -263,22 +293,6 @@ Beatbox._cacheLength = 2500;
 Beatbox._webAudio = Howler.usingWebAudio;
 Beatbox._instruments = { };
 Beatbox._setTimeout = setTimeout;
-
-// Hack Howler to support the "when" parameter of AudioBufferSourceNode.start()
-setTimeout(() => {
-	if(Beatbox._webAudio) {
-		let createBufferSourceBkp = Howler.ctx.createBufferSource;
-		Howler.ctx.createBufferSource = function() {
-			let ret = createBufferSourceBkp.apply(this, arguments);
-			let startBkp = ret.start;
-			ret.start = function() {
-				if(Beatbox._whenOverride != null)
-					arguments[0] = Beatbox._whenOverride;
-				return startBkp.apply(this, arguments);
-			};
-			return ret;
-		};
-	}
-}, 0);
+Beatbox._minOnBeatInterval = 100;
 
 module.exports = Beatbox;

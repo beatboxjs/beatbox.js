@@ -1,5 +1,3 @@
-const webpack = require("webpack");
-
 module.exports = {
 	entry: `expose-loader?Beatbox!${__dirname}/src/beatbox.js`,
 	output: {

@@ -11,16 +11,16 @@ Usage
 =====
 
 ```javascript
-import { Howl } from "howler";
 import Beatbox from "beatbox";
 
-// Register some instruments that can be used in the pattern. Refer to the Howler doc
+// Register some instruments that can be used in the pattern. The second parameter
+// is the options to be passed to the Howl constructor. Refer to the Howler doc
 // for the parameters.
-Beatbox.registerInstrument("snare", new Howl({ src: [ "snare.mp3", "snare.ogg" ] }));
-Beatbox.registerInstrument("tom", new Howl({
+Beatbox.registerInstrument("snare", { src: [ "snare.mp3", "snare.ogg" ] });
+Beatbox.registerInstrument("tom", {
         src: [ "tom.mp3", "tom.ogg" ],
         sprite: { instr: [ 0, 1 ] }
-    }), "instr");
+    }, "instr");
 
 // Each array entry represents one beat. Its contents define which sounds are played
 // on that beat.
