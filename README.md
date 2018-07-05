@@ -1,11 +1,11 @@
 __beatbox.js__ is a step sequencer library for JavaScript. It makes it easy to
 create JavaScript-based drum machines that play a pattern of sounds.
 
-beatbox.js relies on [howler.js](https://github.com/goldfire/howler.js) to play
-the sounds. In browsers where the Web Audio API is not supported, it schedules
-the sounds using JavaScript timeouts. Where the Web Audio API is supported, the
-timers provided by the API are used instead, which plays the patterns with highly
-accurate timing that also works when playing in a background tab.
+beatbox.js relies on the Web Audio API through
+[howler.js](https://github.com/goldfire/howler.js) to play the sounds. The
+timers provided by the API play the patterns with highly accurate timing that
+also works when playing in a background tab.
+
 
 Usage
 =====
