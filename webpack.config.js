@@ -4,11 +4,6 @@ module.exports = {
 		filename: "beatbox.js",
 		path: __dirname + "/demo/"
 	},
-	serve: {
-		dev: {
-			publicPath: "/demo/"
-		}
-	},
 	module: {
 		rules: [
 			{ test: require.resolve("howler"), loader: "expose-loader?howler" },
@@ -23,3 +18,11 @@ module.exports = {
 	mode: "production",
 	devtool: "source-map"
 };
+
+if(process.env.WEBPACK_SERVE) {
+	module.exports.serve = {
+		dev: {
+			publicPath: "/demo/"
+		}
+	};
+}
