@@ -77,6 +77,9 @@ player.setBeatLength(newLength);
 // Change repeating
 player.setRepeat(false);
 
+// This amount of beats is skipped from the beginning of the pattern when repeating
+player.setUpbeat(2);
+
 // Call a function when the player starts playing
 player.onplay = function() {
 };

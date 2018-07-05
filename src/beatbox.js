@@ -2,7 +2,7 @@ const Howl = require('howler').Howl;
 const Howler = require('howler').Howler;
 
 class Beatbox {
-	constructor(pattern, strokeLength, repeat) {
+	constructor(pattern, strokeLength, repeat, upbeat) {
 		if(!Howler.usingWebAudio)
 			throw new Error("Cannot use beatbox.js without webaudio.");
 
@@ -11,11 +11,13 @@ class Beatbox {
 		this._pattern = pattern;
 		this._strokeLength = strokeLength;
 		this._repeat = repeat;
+		this._upbeat = upbeat || 0;
 
 		this._fillCacheTimeout = null;
 		this._onBeatTimeout = null;
 		this._players = [ ]; // Collection of Howl objects that the player has created
 		this._position = 0; // If playing, the position innside the pattern until which the cache was filled. If not playing, the position where we should start playing next time.
+		this._startTime = null; // The Howler.ctx.currentTime when the playing was started
 		this._referenceTime = null; // The Howler.ctx.currentTime of the start of the last bar that was created by the cache (excluding upbeat)
 		this._lastInstrumentStrokes = { }; // Last Howl object of each instrument while filling the cache
 	}
@@ -122,9 +124,10 @@ class Beatbox {
 
 	getPosition() {
 		if(this.playing) {
-			let ret = (Howler.ctx.currentTime - this._referenceTime)*1000 / this._strokeLength;
-			while(ret < 0) { // In case the cache is already filling for the next repetition
-				ret += this._pattern.length;
+			let ret = (Howler.ctx.currentTime - this._referenceTime)*1000 / this._strokeLength + this._upbeat;
+			let min = (Howler.ctx.currentTime < this._startTime) ? 0 : this._upbeat;
+			while(ret < min) { // In case the cache is already filling for the next repetition
+				ret += this._pattern.length - this._upbeat;
 			}
 			return Math.floor(ret);
 		} else {
@@ -158,7 +161,7 @@ class Beatbox {
 
 			let now = (Howler.ctx.currentTime - this._referenceTime)*1000 / this._strokeLength;
 			while(now < 0)
-				now += this._pattern.length;
+				now += this._pattern.length - this._upbeat;
 			this._referenceTime = Howler.ctx.currentTime - now * strokeLength / 1000;
 		}
 
@@ -174,12 +177,24 @@ class Beatbox {
 		this._applyChanges();
 	}
 
+
+	setUpbeat(upbeat) {
+		this._referenceTime += (upbeat - this._upbeat) * this._strokeLength / 1000;
+		this._upbeat = upbeat || 0;
+
+		this._applyChanges();
+	}
+
+
 	_applyChanges() {
 		if(this.playing) {
 			this._position = this.getPosition()+1;
 
 			while(this._referenceTime > Howler.ctx.currentTime) // Caching might be in a future repetition already
-				this._referenceTime -= this._pattern.length * this._strokeLength / 1000;
+				this._referenceTime -= (this._pattern.length - this._upbeat) * this._strokeLength / 1000;
+
+			if(this._referenceTime < this._startTime)
+				this._referenceTime = this._startTime;
 
 			this._clearWebAudioCache(Howler.ctx.currentTime+0.000001);
 			this._fillWebAudioCache();
@@ -227,7 +242,7 @@ class Beatbox {
 
 
 	_playUsingWebAudio() {
-		this._referenceTime = Howler.ctx.currentTime - this._position * this._strokeLength / 1000;
+		this._startTime = this._referenceTime = Howler.ctx.currentTime - (this._position - this._upbeat) * this._strokeLength / 1000;
 
 		let func = () => {
 			if(this._fillWebAudioCache() === false) {
@@ -235,7 +250,7 @@ class Beatbox {
 					this.stop();
 					this._position = 0;
 					this.onstop && this.onstop();
-				}, this._referenceTime*1000 + this._strokeLength * this._pattern.length - Howler.ctx.currentTime*1000);
+				}, this._referenceTime*1000 + this._strokeLength * (this._pattern.length - this._upbeat) - Howler.ctx.currentTime*1000);
 			} else {
 				this._fillCacheTimeout = setTimeout(func, Beatbox._cacheInterval);
 			}
@@ -249,19 +264,20 @@ class Beatbox {
 				if(sinceBeat < 0)
 					sinceBeat += this._strokeLength;
 
-				this._timeout2 = setTimeout(onBeatFunc, Math.max(Beatbox._minOnBeatInterval, this._strokeLength - sinceBeat));
+				this._onBeatTimeout = setTimeout(onBeatFunc, Math.max(Beatbox._minOnBeatInterval, this._strokeLength - sinceBeat));
 			};
 			onBeatFunc();
 		}
 	}
 
+
 	_fillWebAudioCache() {
 		let cacheUntil = Howler.ctx.currentTime + Beatbox._cacheLength/1000;
-		while(this._referenceTime + this._position*this._strokeLength/1000 <= cacheUntil) {
+		while(this._referenceTime + (this._position-this._upbeat)*this._strokeLength/1000 <= cacheUntil) {
 			if(this._position >= this._pattern.length) {
 				if(this._repeat) {
-					this._position = 0;
-					this._referenceTime = this._referenceTime + this._strokeLength * this._pattern.length / 1000;
+					this._position = this._upbeat;
+					this._referenceTime = this._referenceTime + this._strokeLength * (this._pattern.length - this._upbeat) / 1000;
 				}
 				else
 					return false;
@@ -271,7 +287,7 @@ class Beatbox {
 				for(let strokeIdx=0; strokeIdx<this._pattern[this._position].length; strokeIdx++) {
 					let instr = Beatbox._getInstrumentWithParams(this._pattern[this._position][strokeIdx]);
 					if(instr) {
-						let time = this._referenceTime + this._position*this._strokeLength/1000;
+						let time = this._referenceTime + (this._position-this._upbeat)*this._strokeLength/1000;
 
 						if(this._lastInstrumentStrokes[instr.key])
 							Beatbox._stopWhen(this._lastInstrumentStrokes[instr.key].instr, time, this._lastInstrumentStrokes[instr.key].id);
