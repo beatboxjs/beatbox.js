@@ -4,6 +4,11 @@ module.exports = {
 		filename: "beatbox.js",
 		path: __dirname + "/demo/"
 	},
+	serve: {
+		dev: {
+			publicPath: "/demo/"
+		}
+	},
 	module: {
 		rules: [
 			{ test: require.resolve("howler"), loader: "expose-loader?howler" },
