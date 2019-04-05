@@ -101,7 +101,7 @@ class Beatbox {
 	}
 
 
-	stop() {
+	stop(reset) {
 		if(!this.playing)
 			return;
 
@@ -113,7 +113,7 @@ class Beatbox {
 			this._onBeatTimeout = null;
 		}
 
-		this._position = this.getPosition();
+		this._position = reset ? 0 : this.getPosition();
 		this._clearWebAudioCache();
 
 		this.playing = false;
@@ -247,9 +247,7 @@ class Beatbox {
 		let func = () => {
 			if(this._fillWebAudioCache() === false) {
 				this._fillCacheTimeout = setTimeout(() => {
-					this.stop();
-					this._position = 0;
-					this.onstop && this.onstop();
+					this.stop(true);
 				}, this._referenceTime*1000 + this._strokeLength * (this._pattern.length - this._upbeat) - Howler.ctx.currentTime*1000);
 			} else {
 				this._fillCacheTimeout = setTimeout(func, Beatbox._cacheInterval);
