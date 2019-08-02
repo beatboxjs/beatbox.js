@@ -1,10 +1,6 @@
 .idea
 *.iml
 bower_components
-node_modules
-dist
-demo/beatbox.js
-demo/beatbox.js.map
 .yalc
 yalc.lock
 yarn-error.log

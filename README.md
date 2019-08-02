@@ -26,21 +26,21 @@ Beatbox.registerInstrument("tom", {
 // on that beat.
 var pattern = [
 	[ "snare", "tom" ],
-    [ "snare" ],
-    [ "snare" ],
-    [ "snare", "tom" ],
-    [ "snare" ],
-    [ "snare" ],
-    [ "snare", "tom" ],
-    [ "snare" ],
-    [ "snare" ],
-    [ { instrument: "snare", volume: 0.8 } ], // Extended syntax
-    [ "snare", "tom" ],
-    [ "snare" ],
-    [ "snare", "tom" ],
-    [ "snare" ],
-    [ "snare" ],
-    [ "snare" ]
+	[ "snare" ],
+	[ "snare" ],
+	[ "snare", "tom" ],
+	[ "snare" ],
+	[ "snare" ],
+	[ "snare", "tom" ],
+	[ "snare" ],
+	[ "snare" ],
+	[ { instrument: "snare", volume: 0.8 } ], // Extended syntax
+	[ "snare", "tom" ],
+	[ "snare" ],
+	[ "snare", "tom" ],
+	[ "snare" ],
+	[ "snare" ],
+	[ "snare" ]
 ];
 
 // The duration of a beat in milliseconds. This is the duration of a stroke in 4/4
