@@ -8,6 +8,12 @@
     "type": "git",
     "url": "https://github.com/beatboxjs/beatbox.js.git"
   },
+  "files": [
+    "demo",
+    "dist",
+    "src",
+    "README.md"
+  ],
   "scripts": {
     "build": "webpack",
     "watch": "webpack --watch",

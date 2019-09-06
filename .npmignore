@@ -1,7 +1,0 @@
-.idea
-*.iml
-bower_components
-.yalc
-yalc.lock
-yarn-error.log
-yarn.lock
