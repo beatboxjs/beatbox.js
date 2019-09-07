@@ -22,12 +22,11 @@
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
-    "@babel/plugin-proposal-class-properties": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
-    "@babel/preset-typescript": "^7.3.3",
     "babel-loader": "^8.0.6",
     "expose-loader": "^0.7.5",
     "rimraf": "^3.0.0",
+    "ts-loader": "^6.0.4",
     "typescript": "^3.5.3",
     "webpack": "^4.39.2",
     "webpack-bundle-analyzer": "^3.4.1",
@@ -40,7 +39,6 @@
     "@types/howler": "^2.1.1",
     "core-js": "^3.2.1",
     "events": "^3.0.0",
-    "fork-ts-checker-webpack-plugin": "^1.5.0",
     "howler": "^2.1.2",
     "regenerator-runtime": "^0.13.3"
   }
