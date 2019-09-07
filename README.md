@@ -81,14 +81,14 @@ player.setRepeat(false);
 player.setUpbeat(2);
 
 // Call a function when the player starts playing
-player.onplay = function() {
-};
+player.on("play", () => {
+});
 
 // Call a function when a beat is played (not always guaranteed to be run for each beat)
-player.onbeat = function(beat) {
-};
+player.on("beat", (beat) => {
+});
 
 // Call a function when the playing ends
-player.onstop = function() {
-};
+player.on("stop", () => {
+});
 ```

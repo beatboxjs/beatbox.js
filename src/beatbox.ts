@@ -1,4 +1,5 @@
 import { Howler, Howl } from "howler";
+import EventEmitter from "events";
 
 export interface SoundReference {
 	howl: Howl;
@@ -36,7 +37,7 @@ interface PlayingBeatbox {
 	_referenceTime: number;
 }
 
-export class Beatbox {
+export class Beatbox extends EventEmitter {
 
 	static _cacheInterval: number = 1000;
 	static _cacheLength: number = 2500;
@@ -73,6 +74,8 @@ export class Beatbox {
 	_lastInstrumentStrokes: { [instr: string]: HowlReference } = { };
 
 	constructor(pattern: Pattern, strokeLength: number, repeat: boolean, upbeat?: number) {
+		super();
+
 		if(!Howler.usingWebAudio)
 			throw new Error("Cannot use beatbox.js without webaudio.");
 
@@ -80,6 +83,16 @@ export class Beatbox {
 		this._strokeLength = strokeLength;
 		this._repeat = repeat;
 		this._upbeat = upbeat || 0;
+
+		this.on("play", () => {
+			this.onplay && this.onplay();
+		});
+		this.on("beat", (pos) => {
+			this.onbeat && this.onbeat(pos);
+		});
+		this.on("stop", () => {
+			this.onstop && this.onstop();
+		});
 	}
 
 
@@ -158,7 +171,7 @@ export class Beatbox {
 
 			this._playUsingWebAudio();
 
-			this.onplay && this.onplay();
+			this.emit("play");
 		});
 	}
 
@@ -182,7 +195,7 @@ export class Beatbox {
 
 		this.playing = false;
 
-		this.onstop && this.onstop();
+		this.emit("stop");
 	}
 
 
@@ -321,17 +334,15 @@ export class Beatbox {
 		};
 		func();
 
-		if(this.onbeat) {
-			let onBeatFunc = () => {
-				this.onbeat && this.onbeat(this.getPosition());
-				let sinceBeat = (Howler.ctx.currentTime - t._referenceTime)*1000 % this._strokeLength;
-				if(sinceBeat < 0)
-					sinceBeat += this._strokeLength;
+		let onBeatFunc = () => {
+			this.emit("beat", this.getPosition());
+			let sinceBeat = (Howler.ctx.currentTime - t._referenceTime)*1000 % this._strokeLength;
+			if(sinceBeat < 0)
+				sinceBeat += this._strokeLength;
 
-				this._onBeatTimeout = window.setTimeout(onBeatFunc, Math.max(Beatbox._minOnBeatInterval, this._strokeLength - sinceBeat));
-			};
-			onBeatFunc();
-		}
+			this._onBeatTimeout = window.setTimeout(onBeatFunc, Math.max(Beatbox._minOnBeatInterval, this._strokeLength - sinceBeat));
+		};
+		onBeatFunc();
 	}
 
 

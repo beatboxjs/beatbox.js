@@ -1,3 +1,7 @@
+const nodeExternals = require('webpack-node-externals');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+
 module.exports = (env, argv) => {
 
 	const isDev = argv.mode == "development";
@@ -8,7 +12,36 @@ module.exports = (env, argv) => {
 			extensions: [ ".js", ".ts" ]
 		},
 		mode: isDev ? "development" : "production",
-		devtool: isDev ? "cheap-eval-source-map" : "source-map"
+		devtool: isDev ? "cheap-eval-source-map" : "source-map",
+		module: {
+			rules: [
+				{
+					resource: { and: [ /\.ts/, [
+						__dirname + "/src/"
+					] ] },
+					use: [
+						{
+							loader: "babel-loader",
+							options: {
+								presets: [
+									[
+										"@babel/preset-env",
+										{
+											useBuiltIns: "usage",
+											corejs: 3
+										}
+									],
+									"@babel/preset-typescript"
+								],
+								plugins: [
+									"@babel/plugin-proposal-class-properties"
+								]
+							}
+						}
+					]
+				}
+			]
+		}
 	};
 
 	return [
@@ -23,32 +56,8 @@ module.exports = (env, argv) => {
 			},
 			module: {
 				rules: [
-					{ test: require.resolve("howler"), loader: "expose-loader?howler" },
-					{
-						resource: { and: [ /\.ts/, [
-							__dirname + "/src/"
-						] ] },
-						use: [
-							{
-								loader: "babel-loader",
-								options: {
-									presets: [
-										[
-											"@babel/preset-env",
-											{
-												useBuiltIns: "usage",
-												corejs: 3
-											}
-										],
-										"@babel/preset-typescript"
-									],
-									plugins: [
-										"@babel/plugin-proposal-class-properties"
-									]
-								}
-							}
-						]
-					}
+					...base.module.rules,
+					{ test: require.resolve("howler"), loader: "expose-loader?howler" }
 				]
 			},
 			devServer: {
@@ -64,18 +73,11 @@ module.exports = (env, argv) => {
 				library: "Beatbox",
 				libraryTarget: "umd"
 			},
-			module: {
-				rules: [
-					{
-						resource: { and: [ /\.ts/, [
-							__dirname + "/src/"
-						] ] },
-						use: [
-							"ts-loader"
-						]
-					}
-				]
-			}
+			externals: [ nodeExternals() ],
+			plugins: [
+				new ForkTsCheckerWebpackPlugin(),
+				//new BundleAnalyzerPlugin()
+			]
 		}
 	];
 };
