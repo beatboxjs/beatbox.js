@@ -25,7 +25,7 @@ export interface HowlReference {
 	id: number;
 }
 
-export type Pattern = Array<Array<InstrumentReference>>;
+export type Pattern = Array<Array<InstrumentReference> | undefined>;
 
 function isPlaying(beatbox: Beatbox | PlayingBeatbox): beatbox is PlayingBeatbox {
 	return beatbox.playing;
@@ -360,9 +360,10 @@ export class Beatbox extends EventEmitter {
 					return false;
 			}
 
-			if(this._pattern[this._position]) {
-				for(let strokeIdx=0; strokeIdx<this._pattern[this._position].length; strokeIdx++) {
-					let instr = Beatbox._getInstrumentWithParams(this._pattern[this._position][strokeIdx]);
+			const part = this._pattern[this._position];
+			if(part) {
+				for(let strokeIdx=0; strokeIdx<part.length; strokeIdx++) {
+					let instr = Beatbox._getInstrumentWithParams(part[strokeIdx]);
 					if(instr) {
 						let time = t._referenceTime + (this._position-this._upbeat)*this._strokeLength/1000;
 
