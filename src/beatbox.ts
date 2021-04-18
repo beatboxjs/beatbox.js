@@ -1,4 +1,4 @@
-import { Howler, Howl } from "howler";
+import { Howler, Howl, HowlOptions } from "howler";
 import EventEmitter from "events";
 
 export interface SoundReference {
@@ -102,7 +102,7 @@ export class Beatbox extends EventEmitter {
 	 * @param soundOptions {Object} Parameters to pass to the Howl constructor
 	 * @param sprite {String?} Optional sprite parameter to use for Howl.play()
 	 */
-	static registerInstrument(key: string, soundOptions: IHowlProperties, sprite?: string): void {
+	static registerInstrument(key: string, soundOptions: HowlOptions, sprite?: string): void {
 		Beatbox._instruments[key] = { howl: new Howl(soundOptions), sprite: sprite };
 	}
 
@@ -113,9 +113,9 @@ export class Beatbox extends EventEmitter {
 		const setTimeout = window.setTimeout;
 
 		// Fix time for end timer
-		window.setTimeout = function(func, millis) {
+		window.setTimeout = function(func: () => void, millis: number) {
 			return setTimeout(func, (millis || 0) + (when - Howler.ctx.currentTime)*1000);
-		};
+		} as any;
 
 		try {
 			return Beatbox._play(instrumentWithParams);
