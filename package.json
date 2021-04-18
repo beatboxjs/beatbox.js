@@ -21,8 +21,6 @@
     "dev-server": "webpack serve --mode development --config-name demo"
   },
   "devDependencies": {
-    "@types/events": "^3.0.0",
-    "@types/howler": "^2.2.2",
     "@types/webpack-bundle-analyzer": "^4.4.0",
     "@types/webpack-dev-server": "^3.11.3",
     "@types/webpack-node-externals": "^2.5.1",
@@ -38,6 +36,8 @@
     "webpack-node-externals": "^2.5.2"
   },
   "dependencies": {
+    "@types/events": "^3.0.0",
+    "@types/howler": "^2.2.2",
     "events": "^3.3.0",
     "howler": "^2.2.1"
   }
