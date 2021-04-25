@@ -1,14 +1,14 @@
+# beatbox.js
+
 __beatbox.js__ is a step sequencer library for JavaScript. It makes it easy to
 create JavaScript-based drum machines that play a pattern of sounds.
 
-beatbox.js relies on the Web Audio API through
-[howler.js](https://github.com/goldfire/howler.js) to play the sounds. The
+beatbox.js relies on the Web Audio API to play the sounds. The
 timers provided by the API play the patterns with highly accurate timing that
 also works when playing in a background tab.
 
 
-Usage
-=====
+## Usage
 
 ```javascript
 import Beatbox from "beatbox";
@@ -16,15 +16,17 @@ import Beatbox from "beatbox";
 // Register some instruments that can be used in the pattern. The second parameter
 // is the options to be passed to the Howl constructor. Refer to the Howler doc
 // for the parameters.
-Beatbox.registerInstrument("snare", { src: [ "snare.mp3", "snare.ogg" ] });
-Beatbox.registerInstrument("tom", {
-        src: [ "tom.mp3", "tom.ogg" ],
-        sprite: { instr: [ 0, 1 ] }
-    }, "instr");
+const [snare, tom] = await Promise.all([
+	fetch("snare.mp3").then((res) => res.arrayBuffer()),
+	fetch("tom.mp3").then((res) => res.arrayBuffer())
+]);
+Beatbox.registerInstrument("snare", snare);
+Beatbox.registerInstrument("tom", snare);
 
 // Each array entry represents one beat. Its contents define which sounds are played
-// on that beat.
-var pattern = [
+// on that beat. You can also create an empty array using new Array(length) and only
+// set the entries where you want a sound to play.
+const pattern = [
 	[ "snare", "tom" ],
 	[ "snare" ],
 	[ "snare" ],
@@ -43,16 +45,16 @@ var pattern = [
 	[ "snare" ]
 ];
 
-// The duration of a beat in milliseconds. This is the duration of a stroke in 4/4
-// time measurement at 100 bpm.
-var beatLength = 60000/100/4;
+// The duration of a beat in milliseconds. This example is the duration of a stroke in
+// 4/4 time measurement at 100 bpm.
+const beatLength = 60000/100/4;
 
 // Repeat the pattern in an endless loop?
-var repeat = false;
+const repeat = false;
 
-var player = new Beatbox(pattern, beatLength, repeat);
+const player = new Beatbox(pattern, beatLength, repeat);
 
-// Start playing the pattern
+// Start playing the pattern (note that some browser only allow this as part of a user interaction)
 player.play();
 
 // Pause playing
@@ -92,3 +94,9 @@ player.on("beat", (beat) => {
 player.on("stop", () => {
 });
 ```
+
+## Migrating from v1 to v2
+
+beatbox.js 2.x does not rely on Howler.js anymore, but uses the WebAudio API directly. This means that the second argument to `Beatbox.registerInstrument()` does not accept a Howler configuration object anymore, but accepts an `ArrayBuffer` object with the contents of an audio file.
+
+The `onplay`, `onbeat` and `onstop` properties are not supported anymore. Instead, register an event handler using `player.on()`.

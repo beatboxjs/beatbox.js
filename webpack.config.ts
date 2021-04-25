@@ -36,21 +36,11 @@ export default (env: any, argv: any): Configuration[] => {
 				libraryExport: "default",
 				libraryTarget: "umd"
 			},
-			module: {
-				rules: [
-					...base.module!.rules!,
-					{
-						test: require.resolve("howler"),
-						loader: "expose-loader",
-						options: {
-							exposes: ["howler"]
-						}
-					}
-				]
-			},
 			devServer: {
 				publicPath: "/demo/",
 				injectClient: false, // https://github.com/webpack/webpack-dev-server/issues/2484
+				disableHostCheck: true,
+				port: 8081,
 			}
 		},
 		{
