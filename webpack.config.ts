@@ -1,6 +1,7 @@
 import nodeExternals from "webpack-node-externals";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 import { Configuration } from "webpack";
+import "webpack-dev-server";
 
 export default (env: any, argv: any): Configuration[] => {
 
@@ -37,9 +38,10 @@ export default (env: any, argv: any): Configuration[] => {
 				libraryTarget: "umd"
 			},
 			devServer: {
-				publicPath: "/demo/",
-				injectClient: false, // https://github.com/webpack/webpack-dev-server/issues/2484
-				disableHostCheck: true,
+				static: {
+					directory: `${__dirname}/demo`
+				},
+				allowedHosts: "all",
 				port: 8081,
 			}
 		},
