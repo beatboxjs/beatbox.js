@@ -13,9 +13,7 @@ also works when playing in a background tab.
 ```javascript
 import Beatbox from "beatbox";
 
-// Register some instruments that can be used in the pattern. The second parameter
-// is the options to be passed to the Howl constructor. Refer to the Howler doc
-// for the parameters.
+// Register some instruments that can be used in the pattern.
 const [snare, tom] = await Promise.all([
 	fetch("snare.mp3").then((res) => res.arrayBuffer()),
 	fetch("tom.mp3").then((res) => res.arrayBuffer())
