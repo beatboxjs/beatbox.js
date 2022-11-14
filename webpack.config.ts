@@ -39,10 +39,15 @@ export default (env: any, argv: any): Configuration[] => {
 			},
 			devServer: {
 				static: {
-					directory: `${__dirname}/demo`
+					directory: __dirname
+				},
+				devMiddleware: {
+					publicPath: '/demo/'
 				},
 				allowedHosts: "all",
 				port: 8081,
+				hot: 'only',
+				liveReload: false
 			}
 		},
 		{
