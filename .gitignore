@@ -2,8 +2,6 @@
 *.iml
 node_modules
 dist
-demo/beatbox.js
-demo/beatbox.js.map
 .pnp.*
 .yarn/*
 !.yarn/patches

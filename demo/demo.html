@@ -2,60 +2,70 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-        <title>Beatbox.js demo</title>
-        <script src="beatbox.js"></script>
-		<script>
-            (async () => {
-                const [sn, su] = await Promise.all(["sn.mp3", "su.mp3"].map((fname) => fetch(fname).then((res) => res.arrayBuffer())));
-                Beatbox.registerInstrument("sn", sn);
-                Beatbox.registerInstrument("su", su);
-            })();
+		<title>Beatbox.js demo</title>
 
-            var sn_quiet = { instrument: "sn", volume: 0.3 };
+		<script type="importmap">
+			{
+				"imports": {
+					"beatbox.js": "../dist/beatbox.js"
+				}
+			}
+		</script>
 
-            var pattern = [
-                [ "sn", "su" ],
-                [ sn_quiet ],
-                [ sn_quiet ],
-                [ sn_quiet, "su" ],
-                [ "sn" ],
-                [ sn_quiet ],
-                [ sn_quiet, "su" ],
-                [ sn_quiet ],
-                [ "sn" ],
-                [ sn_quiet ],
-                [ sn_quiet, "su" ],
-                [ sn_quiet ],
-                [ "sn", "su" ],
-                [ sn_quiet ],
-                [ sn_quiet ],
-                [ sn_quiet ]
-            ];
+		<script type="module">
+			import Beatbox from 'beatbox.js';
 
-            var bpm = 100;
+			(async () => {
+				const [sn, su] = await Promise.all(["sn.mp3", "su.mp3"].map((fname) => fetch(fname).then((res) => res.arrayBuffer())));
+				Beatbox.registerInstrument("sn", sn);
+				Beatbox.registerInstrument("su", su);
+			})();
 
-            var repeat = true;
+			var sn_quiet = { instrument: "sn", volume: 0.3 };
 
-			var player = new Beatbox(pattern, 60000/bpm/4, repeat);
+			window.pattern = [
+				[ "sn", "su" ],
+				[ sn_quiet ],
+				[ sn_quiet ],
+				[ sn_quiet, "su" ],
+				[ "sn" ],
+				[ sn_quiet ],
+				[ sn_quiet, "su" ],
+				[ sn_quiet ],
+				[ "sn" ],
+				[ sn_quiet ],
+				[ sn_quiet, "su" ],
+				[ sn_quiet ],
+				[ "sn", "su" ],
+				[ sn_quiet ],
+				[ sn_quiet ],
+				[ sn_quiet ]
+			];
 
-            player.on("beat", (beat) => {
-                document.getElementById("pos").innerHTML = ""+beat;
-            });
+			window.bpm = 100;
 
-            player.on("stop", () => {
-                document.getElementById("pos").innerHTML = "stop";
-            });
+			window.repeat = true;
+
+			window.player = new Beatbox(pattern, 60000/bpm/4, repeat);
+
+			player.on("beat", (beat) => {
+				document.getElementById("pos").innerHTML = ""+beat;
+			});
+
+			player.on("stop", () => {
+				document.getElementById("pos").innerHTML = "stop";
+			});
 		</script>
 	</head>
 	<body>
 		<button onclick="player.play()">Play</button>
-        <button onclick="player.stop()">Stop</button>
-        <button onclick="player.setPosition(0)">Reset</button>
-        Position: <span id="pos"></span>
-        <br>
-        <button onclick="bpm += 10; player.setBeatLength(60000/bpm/4)">+10</button>
-        <button onclick="bpm -= 10; player.setBeatLength(60000/bpm/4)">-10</button>
-        <button onclick="repeat = !repeat; player.setRepeat(repeat)">Toggle repeat</button>
-        <button onclick="pattern = pattern.reverse(); player.setPattern(pattern)">Reverse pattern</button>
+		<button onclick="player.stop()">Stop</button>
+		<button onclick="player.setPosition(0)">Reset</button>
+		Position: <span id="pos"></span>
+		<br>
+		<button onclick="bpm += 10; player.setBeatLength(60000/bpm/4)">+10</button>
+		<button onclick="bpm -= 10; player.setBeatLength(60000/bpm/4)">-10</button>
+		<button onclick="repeat = !repeat; player.setRepeat(repeat)">Toggle repeat</button>
+		<button onclick="pattern = pattern.reverse(); player.setPattern(pattern)">Reverse pattern</button>
 	</body>
 </html>
