@@ -7,6 +7,8 @@ beatbox.js relies on the Web Audio API to play the sounds. The
 timers provided by the API play the patterns with highly accurate timing that
 also works when playing in a background tab.
 
+[beatbox.js-export](https://github.com/beatboxjs/beatbox.js-export) is an extension
+that allows exporting the drum pattern to WAV/MP3.
 
 ## Usage
 
