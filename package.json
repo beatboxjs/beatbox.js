@@ -1,6 +1,6 @@
 {
   "name": "beatbox.js",
-  "version": "3.0.1",
+  "version": "4.0.0",
   "description": "A step sequencer library for JavaScript that makes it easy to create JavaScript drumming machines that play patterns in an accurate way.",
   "main": "./dist/beatbox.js",
   "types": "./dist/beatbox.d.ts",
