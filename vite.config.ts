@@ -1,11 +1,9 @@
 import { defineConfig } from 'vite';
 import dtsPlugin from 'vite-plugin-dts';
-import autoExternalPlugin from 'rollup-plugin-auto-external';
 
 export default defineConfig({
 	plugins: [
-		dtsPlugin(),
-		autoExternalPlugin()
+		dtsPlugin()
 	],
 	build: {
 		sourcemap: true,
@@ -15,6 +13,9 @@ export default defineConfig({
 			entry: `./src/beatbox.ts`,
 			fileName: () => `beatbox.js`,
 			formats: ['es']
+		},
+		rollupOptions: {
+			external: (id) => !id.startsWith("./") && !id.startsWith("../") && /* resolved internal modules */ !id.startsWith("/")
 		}
 	},
 	resolve: {
