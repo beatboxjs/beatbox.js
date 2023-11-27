@@ -93,6 +93,10 @@ player.on("stop", () => {
 });
 ```
 
+## Migrating from v3 to v4
+
+beatbox.js 4.x changes the signature of `player.record()`, which is a method used by beatbox.js-export.
+
 ## Migrating from v2 to v3
 
 beatbox.js 3.x exports an ES module instead of a UMD bundle. This means that to use it, you need to use a browser or bundler with ESM support.

@@ -23,6 +23,14 @@ export interface ScheduledSound {
 
 export type Pattern = Array<Array<InstrumentReference> | undefined>;
 
+/** A callback that receives a progress float between 0 and 1. */
+export type BeatboxProgressCallback = (progress: number) => void;
+export type BeatboxRecordOptions = {
+	onProgress?: BeatboxProgressCallback;
+	signal?: AbortSignal;
+	channels?: number;
+}
+
 function isPlaying(beatbox: Beatbox | PlayingBeatbox): beatbox is PlayingBeatbox {
 	return beatbox.playing;
 }
@@ -190,7 +198,9 @@ export class Beatbox extends EventEmitter {
 		))), this._pattern.length * this._strokeLength);
 	}
 
-	async record(channels = 2): Promise<AudioBuffer> {
+	async record({ channels = 2, onProgress, signal }: BeatboxRecordOptions = {}): Promise<AudioBuffer> {
+		signal?.throwIfAborted();
+
 		const audioContext = new AudioContext();
 		const sampleRate = audioContext.sampleRate;
 		audioContext.close();
@@ -203,12 +213,37 @@ export class Beatbox extends EventEmitter {
 			clearTimeout(sound.clearTimeout);
 		this._scheduledSounds = [];
 
-		const audioBuffer = await new Promise<AudioBuffer>((resolve) => {
-			offlineContext.startRendering();
-			offlineContext.oncomplete = (e) => {
-				resolve(e.renderedBuffer);
-			};
-		});
+		signal?.throwIfAborted();
+
+		if (onProgress) {
+			(async () => {
+				// Report the progress every audio second
+				const length = this.getLength();
+				const step = 1000;
+				for (let progress = step; progress < length && !signal?.aborted; progress += step) {
+					await offlineContext.suspend(progress / 1000);
+					onProgress(progress / length);
+					offlineContext.resume();
+				}
+			})();
+		}
+
+		const audioBuffer = await Promise.race<AudioBuffer>([
+			offlineContext.startRendering(),
+			new Promise((resolve, reject) => {
+				// Right now we cannot abort the rendering in reaction to the abort signal, see https://github.com/WebAudio/web-audio-api/issues/2445
+				// But at least we can reject the promise.
+				if (signal?.aborted) {
+					reject(signal.reason);
+				}
+				signal?.addEventListener("abort", () => {
+					reject(signal.reason);
+				});
+			})
+		]);
+
+		signal?.throwIfAborted();
+		onProgress?.(1);
 
 		return audioBuffer;
 	}
