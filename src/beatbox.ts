@@ -119,6 +119,7 @@ export class Beatbox extends EventEmitter {
 			source.connect(this._audioContext!.destination);
 		}
 
+		this.emit("source", { source, time });
 		source.start(time);
 
 		const clear = () => {
