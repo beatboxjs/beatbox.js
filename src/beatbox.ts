@@ -374,8 +374,9 @@ export class Beatbox extends EventEmitter {
 					if (instr && (instr.volume == null || instr.volume > 0)) {
 						let time = this._referenceTime! + (this._position - this._upbeat) * this._strokeLength / 1000;
 
-						if(this._lastInstrumentStrokes[instr.key])
-							this._lastInstrumentStrokes[instr.key].stop(time);
+						// We avoid the sound to stop before it is required to sound again. We let it end by itself          
+						// if(this._lastInstrumentStrokes[instr.key])
+						//	this._lastInstrumentStrokes[instr.key].stop(time);
 
 						const sound = this._scheduleSound(instr, time);
 						this._lastInstrumentStrokes[instr.key] = sound;
