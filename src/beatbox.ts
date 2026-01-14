@@ -18,6 +18,7 @@ export interface ScheduledSound {
 	duration: number;
 	source: AudioBufferSourceNode;
 	stop(time?: number): void;
+	rampTo(volume: number, duration: number, time?: number): void;
 	clearTimeout: number;
 }
 
@@ -110,14 +111,11 @@ export class Beatbox extends EventEmitter {
 		const source = this._audioContext!.createBufferSource();
 		source.buffer = instrument.audioBuffer;
 
-		if (instrument.volume && instrument.volume != 1) {
-			const gainNode = this._audioContext!.createGain();
+		const gainNode = this._audioContext!.createGain();
+		if (instrument.volume && instrument.volume != 1)
 			gainNode.gain.value = instrument.volume;
-			gainNode.connect(this._audioContext!.destination);
-			source.connect(gainNode);
-		} else {
-			source.connect(this._audioContext!.destination);
-		}
+		gainNode.connect(this._audioContext!.destination);
+		source.connect(gainNode);
 
 		source.start(time);
 
@@ -139,11 +137,20 @@ export class Beatbox extends EventEmitter {
 			}
 		};
 
+		const rampTo = (volume: number, duration: number, time?: number) => {
+			const now = this._audioContext!.currentTime;
+			const t = time != null && time > 0 ? time : now;
+			gainNode.gain.cancelScheduledValues(t);
+			gainNode.gain.setValueAtTime(gainNode.gain.value, t);
+			gainNode.gain.linearRampToValueAtTime(volume, t + duration);
+		};
+
 		const sound: ScheduledSound = {
 			time,
 			duration: instrument.audioBuffer.duration,
 			source,
 			stop,
+			rampTo,
 			clearTimeout: window.setTimeout(clear, (time - this._audioContext!.currentTime + instrument.audioBuffer.duration) * 1000)
 		};
 		this._scheduledSounds.push(sound);
@@ -374,7 +381,7 @@ export class Beatbox extends EventEmitter {
 						let time = this._referenceTime! + (this._position - this._upbeat) * this._strokeLength / 1000;
 
 						if(this._lastInstrumentStrokes[instr.key])
-							this._lastInstrumentStrokes[instr.key].stop(time);
+							this._lastInstrumentStrokes[instr.key].rampTo(0, 0.01, time);
 
 						const sound = this._scheduleSound(instr, time);
 						this._lastInstrumentStrokes[instr.key] = sound;
