@@ -233,6 +233,10 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 	}
 
 	async record({ channels = 2, onProgress, signal }: BeatboxRecordOptions = {}): Promise<AudioBuffer> {
+		if (this.playing !== 0) {
+			throw new Error("Cannot record while playing.");
+		}
+
 		signal?.throwIfAborted();
 
 		const audioContext = new AudioContext();
