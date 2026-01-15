@@ -300,11 +300,17 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 	}
 
 
-	getPosition(): number {
+	_getCurrentTime(): number | undefined {
 		if (isPlaying(this)) {
 			const timestamp = this._audioContext.getOutputTimestamp();
-			const currentTime = timestamp.contextTime! + (performance.now() - timestamp.performanceTime!) / 1000;
+			return timestamp.contextTime! + (performance.now() - timestamp.performanceTime!) / 1000;
+		}
+	}
 
+
+	getPosition(): number {
+		if (isPlaying(this)) {
+			const currentTime = this._getCurrentTime()!;
 			let ret = (currentTime - this._referenceTime) * 1000 / this._strokeLength + this._upbeat;
 			let min = (currentTime < this._startTime) ? 0 : this._upbeat;
 			while (ret < min) { // In case the cache is already filling for the next repetition
@@ -375,8 +381,9 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 	_applyChanges(): void {
 		if (isPlaying(this)) {
 			this._position = this.getPosition() + 1;
+			const currentTime = this._getCurrentTime()!;
 
-			while (this._referenceTime > this._audioContext.currentTime) { // Caching might be in a future repetition already
+			while (this._referenceTime > currentTime) { // Caching might be in a future repetition already
 				this._referenceTime -= (this._pattern.length - this._upbeat) * this._strokeLength / 1000;
 			}
 
@@ -384,7 +391,7 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 				this._referenceTime = this._startTime;
 			}
 
-			this._clearCache(this._audioContext.currentTime + 0.000001);
+			this._clearCache(currentTime + 0.000001);
 			this._fillCache();
 		}
 	}
