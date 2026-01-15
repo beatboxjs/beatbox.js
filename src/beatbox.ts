@@ -17,9 +17,7 @@ export interface ScheduledSound {
 	time: number;
 	duration: number;
 	source: AudioBufferSourceNode;
-	stop(time?: number): void;
-	rampTo(volume: number, duration: number, time?: number): void;
-	clearTimeout: number;
+	stop(time?: number): Promise<void>;
 }
 
 export type Pattern = Array<Array<InstrumentReference> | undefined>;
@@ -48,6 +46,7 @@ const OfflineAudioContext = window.OfflineAudioContext || (window as any).webkit
 
 export class Beatbox extends EventEmitter {
 
+	static _fadeOutDuration = 0.01;
 	static _cacheInterval: number = 1000;
 	static _cacheLength: number = 5000;
 	static _instruments: { [instr: string]: Instrument } = { };
@@ -117,41 +116,43 @@ export class Beatbox extends EventEmitter {
 		gainNode.connect(this._audioContext!.destination);
 		source.connect(gainNode);
 
-		source.start(time);
-
 		const clear = () => {
+			source.disconnect();
 			const idx = this._scheduledSounds.indexOf(sound);
-			if (idx != -1)
+			if (idx != -1) {
 				this._scheduledSounds.splice(idx, 1);
-		};
-
-		const stop = (time?: number) => {
-			clearTimeout(sound.clearTimeout);
-
-			if (time != null && time > 0) {
-				source.stop(time);
-				sound.clearTimeout = window.setTimeout(clear, (time - this._audioContext!.currentTime) * 1000);
-			} else {
-				source.disconnect();
-				clear();
 			}
 		};
 
-		const rampTo = (volume: number, duration: number, time?: number) => {
-			const now = this._audioContext!.currentTime;
-			const t = time != null && time > 0 ? time : now;
-			gainNode.gain.cancelScheduledValues(t);
-			gainNode.gain.setValueAtTime(gainNode.gain.value, t);
-			gainNode.gain.linearRampToValueAtTime(volume, t + duration);
+		source.addEventListener("ended", () => {
+			clear();
+		});
+
+		source.start(time);
+
+		const stop = async (stopTime: number = this._audioContext!.currentTime) => {
+			if (stopTime < time) { // Stop sound before it starts. This happens when the player stops and scheduled sounds are discarded.
+				// Clear sound synchronously, rather than waiting for the "ended" event handler to clear it. This is important so that when _applyChanges()
+				// refills the cache, the scheduled sounds are already removed and not considered for calculating the end time of the current pattern.
+				clear();
+			} else {
+				gainNode.gain.cancelScheduledValues(stopTime);
+				gainNode.gain.setValueAtTime(gainNode.gain.value, stopTime);
+				gainNode.gain.linearRampToValueAtTime(0, stopTime + Beatbox._fadeOutDuration);
+				source.stop(stopTime + Beatbox._fadeOutDuration);
+				await new Promise<void>((resolve) => {
+					source.addEventListener("ended", () => {
+						resolve();
+					});
+				});
+			}
 		};
 
 		const sound: ScheduledSound = {
 			time,
 			duration: instrument.audioBuffer.duration,
 			source,
-			stop,
-			rampTo,
-			clearTimeout: window.setTimeout(clear, (time - this._audioContext!.currentTime + instrument.audioBuffer.duration) * 1000)
+			stop
 		};
 		this._scheduledSounds.push(sound);
 		return sound;
@@ -216,8 +217,6 @@ export class Beatbox extends EventEmitter {
 		this._audioContext = offlineContext;
 		this._fillCacheInternal();
 		this._audioContext = null;
-		for (const sound of this._scheduledSounds)
-			clearTimeout(sound.clearTimeout);
 		this._scheduledSounds = [];
 
 		signal?.throwIfAborted();
@@ -255,7 +254,7 @@ export class Beatbox extends EventEmitter {
 		return audioBuffer;
 	}
 
-	stop(reset: boolean = false): void {
+	async stop(reset: boolean = false): Promise<void> {
 		if (!this.playing)
 			return;
 
@@ -270,7 +269,7 @@ export class Beatbox extends EventEmitter {
 		}
 
 		this._position = reset ? 0 : this.getPosition();
-		this._clearCache();
+		await this._clearCache();
 
 		(this._audioContext as AudioContext).close();
 		this._audioContext = null;
@@ -381,7 +380,7 @@ export class Beatbox extends EventEmitter {
 						let time = this._referenceTime! + (this._position - this._upbeat) * this._strokeLength / 1000;
 
 						if(this._lastInstrumentStrokes[instr.key])
-							this._lastInstrumentStrokes[instr.key].rampTo(0, 0.01, time);
+							this._lastInstrumentStrokes[instr.key].stop(time);
 
 						const sound = this._scheduleSound(instr, time);
 						this._lastInstrumentStrokes[instr.key] = sound;
@@ -416,14 +415,15 @@ export class Beatbox extends EventEmitter {
 	}
 
 
-	_clearCache(from?: number): void {
+	async _clearCache(from?: number): Promise<void> {
 		if (this._fillCacheTimeout)
 			clearTimeout(this._fillCacheTimeout);
 
-		for (const sound of [...this._scheduledSounds]) {
+		// Iterate over copy of _scheduledSounds as we are removing items from the array
+		await Promise.all([...this._scheduledSounds].map(async (sound) => {
 			if(from == null || sound.time >= from)
-				sound.stop();
-		}
+				await sound.stop();
+		}));
 	}
 }
 
