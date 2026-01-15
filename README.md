@@ -95,16 +95,6 @@ player.on("stop", () => {
 });
 ```
 
-## Migrating from v3 to v4
+## Upgrading
 
-beatbox.js 4.x changes the signature of `player.record()`, which is a method used by beatbox.js-export.
-
-## Migrating from v2 to v3
-
-beatbox.js 3.x exports an ES module instead of a UMD bundle. This means that to use it, you need to use a browser or bundler with ESM support.
-
-## Migrating from v1 to v2
-
-beatbox.js 2.x does not rely on Howler.js anymore, but uses the WebAudio API directly. This means that the second argument to `Beatbox.registerInstrument()` does not accept a Howler configuration object anymore, but accepts an `ArrayBuffer` object with the contents of an audio file.
-
-The `onplay`, `onbeat` and `onstop` properties are not supported anymore. Instead, register an event handler using `player.on()`.
+Check out the [changelog](./CHANGELOG.md) for notes about breaking changes.
