@@ -346,9 +346,9 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 		if (isPlaying(this)) {
 			// Clear everything after the currently playing stroke. If the beat length has been increased, the clear call
 			// in _fillWebAudioCache() would miss the old next stroke, which comes before the new next stroke.
-			this._clearCache(this._audioContext.currentTime+0.000001);
+			this._clearCache(this._audioContext.currentTime + 0.000001);
 
-			let now = (this._audioContext.currentTime - (<PlayingBeatbox> this)._referenceTime)*1000 / this._strokeLength;
+			let now = (this._audioContext.currentTime - (this as PlayingBeatbox)._referenceTime) * 1000 / this._strokeLength;
 			while (now < 0) {
 				now += this._pattern.length - this._upbeat;
 			}
