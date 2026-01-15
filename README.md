@@ -36,13 +36,13 @@ const pattern = [
 	[ "snare", "tom" ],
 	[ "snare" ],
 	[ "snare" ],
-	[ { instrument: "snare", volume: 0.8 } ], // Extended syntax
+	[ { instrument: "snare", cut: true }, { instrument: "snare", volume: 0.8 } ], // Extended syntax
 	[ "snare", "tom" ],
 	[ "snare" ],
 	[ "snare", "tom" ],
 	[ "snare" ],
-	[ "snare" ],
-	[ "snare" ]
+	[ "-snare", "snare" ], // Cut any playing snare sound and play a new one
+	[ "-snare" ] // Cut any playing snare sound
 ];
 
 // The duration of a beat in milliseconds. This example is the duration of a stroke in

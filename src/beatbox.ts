@@ -4,16 +4,19 @@ export interface Instrument {
 	key: string;
 	audioBuffer: AudioBuffer;
 	volume?: number;
+	cut?: boolean;
 }
 
 export interface InstrumentReferenceObject {
 	instrument: string;
 	volume?: number;
+	cut?: boolean;
 }
 
 export type InstrumentReference = string | InstrumentReferenceObject;
 
 export interface ScheduledSound {
+	instrument: Instrument;
 	time: number;
 	duration: number;
 	source: AudioBufferSourceNode;
@@ -72,9 +75,6 @@ export class Beatbox extends EventEmitter {
 
 	/** The this._audioContext.currentTime of the start of the last bar that was created by the cache (excluding upbeat) */
 	_referenceTime: number | null = null;
-
-	/** Last sound objects of each instrument while filling the cache */
-	_lastInstrumentStrokes: { [instr: string]: ScheduledSound } = { };
 
 	constructor(pattern: Pattern, strokeLength: number, repeat: boolean, upbeat?: number) {
 		super();
@@ -149,6 +149,7 @@ export class Beatbox extends EventEmitter {
 		};
 
 		const sound: ScheduledSound = {
+			instrument,
 			time,
 			duration: instrument.audioBuffer.duration,
 			source,
@@ -163,13 +164,14 @@ export class Beatbox extends EventEmitter {
 		if (instr == null)
 			return null;
 
-		const key = typeof instr == "string" ? instr : instr.instrument;
+		const key = typeof instr !== "string" ? instr.instrument : instr.startsWith("-") ? instr.slice(1) : instr;
 		if (!Beatbox._instruments[key])
 			return null;
 
 		return {
 			...Beatbox._instruments[key],
-			...(typeof instr != "string" && instr.volume != null ? { volume: instr.volume } : {})
+			...(typeof instr != "string" && instr.volume != null ? { volume: instr.volume } : {}),
+			cut: typeof instr === "string" ? instr.startsWith("-") : !!instr.cut
 		};
 	}
 
@@ -379,11 +381,15 @@ export class Beatbox extends EventEmitter {
 					if (instr && (instr.volume == null || instr.volume > 0)) {
 						let time = this._referenceTime! + (this._position - this._upbeat) * this._strokeLength / 1000;
 
-						if(this._lastInstrumentStrokes[instr.key])
-							this._lastInstrumentStrokes[instr.key].stop(time);
-
-						const sound = this._scheduleSound(instr, time);
-						this._lastInstrumentStrokes[instr.key] = sound;
+						if (!instr.cut) {
+							this._scheduleSound(instr, time);
+						} else {
+							for (const sound of [...this._scheduledSounds]) {
+								if (sound.instrument.key === instr.key && sound.time < time) {
+									sound.stop(time);
+								}
+							}
+						}
 					}
 				}
 			}
