@@ -309,7 +309,7 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 		if (isPlaying(this)) {
 			let ret = (this._audioContext.currentTime - this._referenceTime) * 1000 / this._strokeLength + this._upbeat;
 			let min = (this._audioContext.currentTime < this._startTime) ? 0 : this._upbeat;
-			while(ret < min) { // In case the cache is already filling for the next repetition
+			while (ret < min) { // In case the cache is already filling for the next repetition
 				ret += this._pattern.length - this._upbeat;
 			}
 			return Math.floor(ret);
@@ -345,8 +345,9 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 			this._clearCache(this._audioContext.currentTime+0.000001);
 
 			let now = (this._audioContext.currentTime - (<PlayingBeatbox> this)._referenceTime)*1000 / this._strokeLength;
-			while(now < 0)
+			while (now < 0) {
 				now += this._pattern.length - this._upbeat;
+			}
 			this._referenceTime = this._audioContext.currentTime - now * strokeLength / 1000;
 		}
 
@@ -377,7 +378,7 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 		if (isPlaying(this)) {
 			this._position = this.getPosition() + 1;
 
-			while(this._referenceTime > this._audioContext.currentTime) { // Caching might be in a future repetition already
+			while (this._referenceTime > this._audioContext.currentTime) { // Caching might be in a future repetition already
 				this._referenceTime -= (this._pattern.length - this._upbeat) * this._strokeLength / 1000;
 			}
 
