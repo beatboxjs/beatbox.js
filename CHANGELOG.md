@@ -9,6 +9,7 @@
 	* **Breaking:** By default, sounds will not be cut off anymore when the same instrument plays another sound. Instead, the sounds will overlap each other.
 	* Specifying an instrument prefixed by a `-` (for example `"-snare"`) will cut off that instrument instead of playing it. In the extended syntax, this can be specified as `{ instrument: "snare", cut: true }`. An instrument can also be cut and played in the same beat to achieve the behaviour before v5 (`["-snare", "snare"]` or `[{ instrument: "snare", cut: true }, { instrument: "snare" }]`.
 * Add TypeScript types for events
+* Make emission of `beat` event more precise
 
 ## v4.0.0
 

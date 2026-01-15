@@ -72,6 +72,7 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 	_audioContext: BaseAudioContext | null = null;
 	_fillCacheTimeout: number | null = null;
 	_onBeatTimeout: number | null = null;
+	_onBeatLast: number | null = null;
 	_scheduledSounds: ScheduledSound[] = [ ];
 
 	/** If playing, the position innside the pattern until which the cache was filled. If not playing, the position where we should start playing next time. */
@@ -90,6 +91,14 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 		this._strokeLength = strokeLength;
 		this._repeat = repeat;
 		this._upbeat = upbeat || 0;
+
+		this.on("newListener", (eventName) => {
+			if (eventName === "beat" && this.listenerCount("beat") === 0) {
+				Promise.resolve().then(() => {
+					this._scheduleOnBeat();
+				});
+			}
+		});
 	}
 
 
@@ -198,17 +207,7 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 		this._startTime = this._referenceTime = this._audioContext.currentTime - (this._position - this._upbeat) * this._strokeLength / 1000;
 
 		this._fillCache();
-
-		const onBeatFunc = () => {
-			this.emit("beat", this.getPosition());
-			let sinceBeat = (this._audioContext!.currentTime - this._referenceTime!)*1000 % this._strokeLength;
-			if (sinceBeat < 0) {
-				sinceBeat += this._strokeLength;
-			}
-
-			this._onBeatTimeout = window.setTimeout(onBeatFunc, Math.max(Beatbox._minOnBeatInterval, this._strokeLength - sinceBeat));
-		};
-		onBeatFunc();
+		this._scheduleOnBeat();
 
 		this.emit("play");
 	}
@@ -280,13 +279,9 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 			this._fillCacheTimeout = null;
 		}
 
-		if (this._onBeatTimeout) {
-			clearTimeout(this._onBeatTimeout);
-			this._onBeatTimeout = null;
-		}
-
 		this._position = reset ? 0 : this.getPosition();
 		this.playing = 2;
+		this._scheduleOnBeat(); // Cancel next beat event
 		this.emit("stopping");
 
 		await this._clearCache();
@@ -307,8 +302,11 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 
 	getPosition(): number {
 		if (isPlaying(this)) {
-			let ret = (this._audioContext.currentTime - this._referenceTime) * 1000 / this._strokeLength + this._upbeat;
-			let min = (this._audioContext.currentTime < this._startTime) ? 0 : this._upbeat;
+			const timestamp = this._audioContext.getOutputTimestamp();
+			const currentTime = timestamp.contextTime! + (performance.now() - timestamp.performanceTime!) / 1000;
+
+			let ret = (currentTime - this._referenceTime) * 1000 / this._strokeLength + this._upbeat;
+			let min = (currentTime < this._startTime) ? 0 : this._upbeat;
 			while (ret < min) { // In case the cache is already filling for the next repetition
 				ret += this._pattern.length - this._upbeat;
 			}
@@ -388,6 +386,31 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 
 			this._clearCache(this._audioContext.currentTime + 0.000001);
 			this._fillCache();
+		}
+	}
+
+
+	/**
+	 * If the player is currently playing and there are any "beat" event listeners, sets up the repeated emission of a "beat" event, with the first event
+	 * being emitted synchronously.
+	 * Otherwise, discards the repeated emission of the event.
+	 */
+	_scheduleOnBeat(): void {
+		if (this.playing === 1 && this.listenerCount("beat") > 0) {
+			const position = this.getPosition();
+			if (this._onBeatLast == null || position !== this._onBeatLast) {
+				this.emit("beat", position);
+			}
+			this._onBeatLast = position;
+			if (this._onBeatTimeout == null) {
+				this._onBeatTimeout = requestAnimationFrame(() => {
+					this._onBeatTimeout = null;
+					this._scheduleOnBeat();
+				});
+			}
+		} else if (this._onBeatTimeout != null) {
+			cancelAnimationFrame(this._onBeatTimeout);
+			this._onBeatTimeout = null;
 		}
 	}
 
