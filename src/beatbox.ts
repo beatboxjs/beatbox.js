@@ -111,8 +111,9 @@ export class Beatbox extends EventEmitter {
 		source.buffer = instrument.audioBuffer;
 
 		const gainNode = this._audioContext!.createGain();
-		if (instrument.volume && instrument.volume != 1)
+		if (instrument.volume && instrument.volume != 1) {
 			gainNode.gain.value = instrument.volume;
+		}
 		gainNode.connect(this._audioContext!.destination);
 		source.connect(gainNode);
 
@@ -131,7 +132,8 @@ export class Beatbox extends EventEmitter {
 		source.start(time);
 
 		const stop = async (stopTime: number = this._audioContext!.currentTime) => {
-			if (stopTime < time) { // Stop sound before it starts. This happens when the player stops and scheduled sounds are discarded.
+			if (stopTime < time) {
+				// Stop sound before it starts. This happens when the player is stopped or the pattern is updated and already scheduled sounds are discarded.
 				// Clear sound synchronously, rather than waiting for the "ended" event handler to clear it. This is important so that when _applyChanges()
 				// refills the cache, the scheduled sounds are already removed and not considered for calculating the end time of the current pattern.
 				clear();
@@ -165,8 +167,9 @@ export class Beatbox extends EventEmitter {
 			return null;
 
 		const key = typeof instr !== "string" ? instr.instrument : instr.startsWith("-") ? instr.slice(1) : instr;
-		if (!Beatbox._instruments[key])
+		if (!Beatbox._instruments[key]) {
 			return null;
+		}
 
 		return {
 			...Beatbox._instruments[key],
@@ -177,8 +180,9 @@ export class Beatbox extends EventEmitter {
 
 
 	play(): void {
-		if(this.playing)
+		if (this.playing) {
 			return;
+		}
 
 		this._audioContext = new AudioContext();
 		this.playing = true;
@@ -189,8 +193,9 @@ export class Beatbox extends EventEmitter {
 		const onBeatFunc = () => {
 			this.emit("beat", this.getPosition());
 			let sinceBeat = (this._audioContext!.currentTime - this._referenceTime!)*1000 % this._strokeLength;
-			if(sinceBeat < 0)
+			if (sinceBeat < 0) {
 				sinceBeat += this._strokeLength;
+			}
 
 			this._onBeatTimeout = window.setTimeout(onBeatFunc, Math.max(Beatbox._minOnBeatInterval, this._strokeLength - sinceBeat));
 		};
@@ -257,8 +262,9 @@ export class Beatbox extends EventEmitter {
 	}
 
 	async stop(reset: boolean = false): Promise<void> {
-		if (!this.playing)
+		if (!this.playing) {
 			return;
+		}
 
 		if (this._fillCacheTimeout) {
 			clearTimeout(this._fillCacheTimeout);
@@ -283,8 +289,8 @@ export class Beatbox extends EventEmitter {
 
 
 	getPosition(): number {
-		if(isPlaying(this)) {
-			let ret = (this._audioContext.currentTime - this._referenceTime)*1000 / this._strokeLength + this._upbeat;
+		if (isPlaying(this)) {
+			let ret = (this._audioContext.currentTime - this._referenceTime) * 1000 / this._strokeLength + this._upbeat;
 			let min = (this._audioContext.currentTime < this._startTime) ? 0 : this._upbeat;
 			while(ret < min) { // In case the cache is already filling for the next repetition
 				ret += this._pattern.length - this._upbeat;
@@ -298,11 +304,13 @@ export class Beatbox extends EventEmitter {
 
 	setPosition(position: number): void {
 		let playing = this.playing;
-		if(playing)
+		if (playing) {
 			this.stop();
+		}
 		this._position = (position != null ? position : 0);
-		if (playing)
+		if (playing) {
 			this.play();
+		}
 	}
 
 
@@ -314,7 +322,7 @@ export class Beatbox extends EventEmitter {
 
 
 	setBeatLength(strokeLength: number): void {
-		if(isPlaying(this)) {
+		if (isPlaying(this)) {
 			// Clear everything after the currently playing stroke. If the beat length has been increased, the clear call
 			// in _fillWebAudioCache() would miss the old next stroke, which comes before the new next stroke.
 			this._clearCache(this._audioContext.currentTime+0.000001);
@@ -349,16 +357,18 @@ export class Beatbox extends EventEmitter {
 
 
 	_applyChanges(): void {
-		if(isPlaying(this)) {
-			this._position = this.getPosition()+1;
+		if (isPlaying(this)) {
+			this._position = this.getPosition() + 1;
 
-			while(this._referenceTime > this._audioContext.currentTime) // Caching might be in a future repetition already
+			while(this._referenceTime > this._audioContext.currentTime) { // Caching might be in a future repetition already
 				this._referenceTime -= (this._pattern.length - this._upbeat) * this._strokeLength / 1000;
+			}
 
-			if(this._referenceTime < this._startTime)
+			if (this._referenceTime < this._startTime) {
 				this._referenceTime = this._startTime;
+			}
 
-			this._clearCache(this._audioContext.currentTime+0.000001);
+			this._clearCache(this._audioContext.currentTime + 0.000001);
 			this._fillCache();
 		}
 	}
@@ -366,17 +376,18 @@ export class Beatbox extends EventEmitter {
 
 	_fillCacheInternal(cacheUntil?: number): boolean {
 		while (cacheUntil == null || this._referenceTime! + (this._position - this._upbeat) * this._strokeLength / 1000 <= cacheUntil) {
-			if(this._position >= this._pattern.length) {
-				if(cacheUntil != null && this._repeat) {
+			if (this._position >= this._pattern.length) {
+				if (cacheUntil != null && this._repeat) {
 					this._position = this._upbeat;
 					this._referenceTime = this._referenceTime! + this._strokeLength * (this._pattern.length - this._upbeat) / 1000;
-				} else
+				} else {
 					return false;
+				}
 			}
 
 			const part = this._pattern[this._position];
-			if(part) {
-				for(let strokeIdx=0; strokeIdx<part.length; strokeIdx++) {
+			if (part) {
+				for (let strokeIdx = 0; strokeIdx < part.length; strokeIdx++) {
 					const instr = Beatbox._resolveInstrument(part[strokeIdx]);
 					if (instr && (instr.volume == null || instr.volume > 0)) {
 						let time = this._referenceTime! + (this._position - this._upbeat) * this._strokeLength / 1000;
@@ -402,14 +413,15 @@ export class Beatbox extends EventEmitter {
 
 
 	_fillCache(): void {
-		if (this._fillCacheTimeout)
+		if (this._fillCacheTimeout) {
 			window.clearTimeout(this._fillCacheTimeout);
+		}
 
 		const hasMore = this._fillCacheInternal(this._audioContext!.currentTime + Beatbox._cacheLength / 1000);
 
-		if (hasMore)
+		if (hasMore) {
 			this._fillCacheTimeout = window.setTimeout(() => { this._fillCache(); }, Beatbox._cacheInterval);
-		else {
+		} else {
 			const endTime = Math.max(
 				this._referenceTime! * 1000 + this._strokeLength * (this._pattern.length - this._upbeat),
 				...this._scheduledSounds.map((sound) => (sound.time + sound.duration) * 1000)
@@ -422,13 +434,15 @@ export class Beatbox extends EventEmitter {
 
 
 	async _clearCache(from?: number): Promise<void> {
-		if (this._fillCacheTimeout)
+		if (this._fillCacheTimeout) {
 			clearTimeout(this._fillCacheTimeout);
+		}
 
 		// Iterate over copy of _scheduledSounds as we are removing items from the array
 		await Promise.all([...this._scheduledSounds].map(async (sound) => {
-			if(from == null || sound.time >= from)
+			if (from == null || sound.time >= from) {
 				await sound.stop();
+			}
 		}));
 	}
 }
