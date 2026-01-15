@@ -33,11 +33,19 @@ export type BeatboxRecordOptions = {
 	channels?: number;
 }
 
+export type BeatboxSourceEvent = {
+	time: number;
+	source: AudioBufferSourceNode;
+	instrument: Instrument;
+	duration: number;
+};
+
 export interface BeatboxEvents {
 	play: [];
 	beat: [position: number];
 	stopping: [];
 	stop: [];
+	source: [BeatboxSourceEvent];
 }
 
 function isPlaying(beatbox: Beatbox | PlayingBeatbox): beatbox is PlayingBeatbox {
@@ -145,10 +153,13 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 			clear();
 		});
 
-		source.start(time);
+		const event: BeatboxSourceEvent = { time, source, instrument, duration: instrument.audioBuffer.duration };
+		this.emit("source", event);
+		const newTime = event.time;
+		source.start(newTime);
 
 		const stop = async (stopTime: number = this._audioContext!.currentTime) => {
-			if (stopTime < time) {
+			if (stopTime < newTime) {
 				// Stop sound before it starts. This happens when the player is stopped or the pattern is updated and already scheduled sounds are discarded.
 				// Clear sound synchronously, rather than waiting for the "ended" event handler to clear it. This is important so that when _applyChanges()
 				// refills the cache, the scheduled sounds are already removed and not considered for calculating the end time of the current pattern.
@@ -168,7 +179,7 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 
 		const sound: ScheduledSound = {
 			instrument,
-			time,
+			time: newTime,
 			duration: instrument.audioBuffer.duration,
 			source,
 			stop

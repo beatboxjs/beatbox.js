@@ -93,6 +93,13 @@ player.on("beat", (beat) => {
 // Call a function when the playing ends
 player.on("stop", () => {
 });
+
+// Call a function when the player schedules an individual sound
+player.on("source", (source) => {
+	// You can modify the start time (in seconds), for example to add some imprecision.
+	// The start time must not be < 0.
+	source.time = Math.max(0, source.time + Math.random() * 0.02 - 0.01);
+});
 ```
 
 ## Upgrading
