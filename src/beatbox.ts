@@ -33,12 +33,19 @@ export type BeatboxRecordOptions = {
 	channels?: number;
 }
 
+export interface BeatboxEvents {
+	play: [];
+	beat: [position: number];
+	stopping: [];
+	stop: [];
+}
+
 function isPlaying(beatbox: Beatbox | PlayingBeatbox): beatbox is PlayingBeatbox {
-	return beatbox.playing;
+	return beatbox.playing !== 0;
 }
 
 interface PlayingBeatbox {
-	playing: true;
+	playing: 1 | 2;
 	_audioContext: AudioContext;
 	_startTime: number;
 	_referenceTime: number;
@@ -47,7 +54,7 @@ interface PlayingBeatbox {
 const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
 const OfflineAudioContext = window.OfflineAudioContext || (window as any).webkitOfflineAudioContext;
 
-export class Beatbox extends EventEmitter {
+export class Beatbox extends EventEmitter<BeatboxEvents> {
 
 	static _fadeOutDuration = 0.01;
 	static _cacheInterval: number = 1000;
@@ -55,7 +62,7 @@ export class Beatbox extends EventEmitter {
 	static _instruments: { [instr: string]: Instrument } = { };
 	static _minOnBeatInterval = 100;
 
-	playing: boolean = false;
+	playing: 0 | 1 | 2 = 0;
 
 	_pattern: Pattern;
 	_strokeLength: number;
@@ -180,12 +187,14 @@ export class Beatbox extends EventEmitter {
 
 
 	play(): void {
-		if (this.playing) {
+		if (this.playing === 1) {
 			return;
 		}
 
-		this._audioContext = new AudioContext();
-		this.playing = true;
+		if (!this._audioContext) {
+			this._audioContext = new AudioContext();
+		}
+		this.playing = 1;
 		this._startTime = this._referenceTime = this._audioContext.currentTime - (this._position - this._upbeat) * this._strokeLength / 1000;
 
 		this._fillCache();
@@ -262,7 +271,7 @@ export class Beatbox extends EventEmitter {
 	}
 
 	async stop(reset: boolean = false): Promise<void> {
-		if (!this.playing) {
+		if (this.playing !== 1) {
 			return;
 		}
 
@@ -277,12 +286,20 @@ export class Beatbox extends EventEmitter {
 		}
 
 		this._position = reset ? 0 : this.getPosition();
+		this.playing = 2;
+		this.emit("stopping");
+
 		await this._clearCache();
+
+		if (this.playing !== 2) {
+			// Player was started again in the meantime
+			return;
+		}
 
 		(this._audioContext as AudioContext).close();
 		this._audioContext = null;
 
-		this.playing = false;
+		this.playing = 0;
 
 		this.emit("stop");
 	}

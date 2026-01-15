@@ -3,10 +3,12 @@
 ## v5.0.0
 
 * To avoid clicking, sounds are now faded out instead of cutting them off (#19).
-	* **Breaking:** `player.stop()` is now asynchronous, as the player now stops with a small delay to have time to fade out all active sounds. It returns a promise that is resolved as soon as all sounds are faded out. The `stop` event is also emitted with a delay.
+	* **Breaking:** `player.stop()` is now asynchronous, as the player now stops with a small delay to have time to fade out all active sounds. It returns a promise that is resolved as soon as all sounds are faded out. A new `stopping` event is emitted synchronously, the `stop` event is now emitted with a delay.
+	* **Breaking:** `player.playing` is now a number instead of a boolean. `0` means stopped, `1` means playing, `2` means stopping.
 * Previously, playing an instrument always cut off the previous sound of the same instrument. This behaviour can now be controlled.
 	* **Breaking:** By default, sounds will not be cut off anymore when the same instrument plays another sound. Instead, the sounds will overlap each other.
 	* Specifying an instrument prefixed by a `-` (for example `"-snare"`) will cut off that instrument instead of playing it. In the extended syntax, this can be specified as `{ instrument: "snare", cut: true }`. An instrument can also be cut and played in the same beat to achieve the behaviour before v5 (`["-snare", "snare"]` or `[{ instrument: "snare", cut: true }, { instrument: "snare" }]`.
+* Add TypeScript types for events
 
 ## v4.0.0
 

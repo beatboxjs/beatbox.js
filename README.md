@@ -67,7 +67,7 @@ player.getPosition();
 // stopped)
 player.setPosition(0);
 
-// Find out if the player is currently playing
+// Find out if the player is currently playing. 0 = stopped; 1 = playing; 2 = stopping (sounds are fading out)
 player.playing;
 
 // Change the pattern (also works while playing)
