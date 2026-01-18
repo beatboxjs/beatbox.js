@@ -340,11 +340,11 @@ export class Beatbox extends EventEmitter<BeatboxEvents> {
 
 	setPosition(position: number): void {
 		let playing = this.playing;
-		if (playing) {
+		if (playing === 1) {
 			this.stop();
 		}
 		this._position = (position != null ? position : 0);
-		if (playing) {
+		if (playing === 1) {
 			this.play();
 		}
 	}

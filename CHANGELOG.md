@@ -1,5 +1,9 @@
 # Changelog
 
+## v5.0.1
+
+* Fix calling `setPosition()` right after `stop()`.
+
 ## v5.0.0
 
 * To avoid clicking, sounds are now faded out instead of cutting them off (#19).
